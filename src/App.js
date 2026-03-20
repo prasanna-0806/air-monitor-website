@@ -45,6 +45,7 @@ export default function App() {
   const [data, setData] = useState([]);
   const [latest, setLatest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [prediction, setPrediction] = useState(null);
 
   const fetchData = async () => {
     const { data: rows } = await supabase
@@ -61,6 +62,24 @@ export default function App() {
       }));
       setData(formatted);
       setLatest(formatted[formatted.length - 1]);
+
+      // Get ML prediction
+      const last = rows[0];
+      try {
+        const res = await fetch("https://air-monitor-api.onrender.com/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            temperature: last.temperature,
+            humidity: last.humidity,
+            gas: last.gas
+          })
+        });
+        const pred = await res.json();
+        setPrediction(pred);
+      } catch (e) {
+        console.log("Prediction error:", e);
+      }
     }
     setLoading(false);
   };
@@ -165,6 +184,33 @@ export default function App() {
         </div>
       </div>
 
+      {/* ML Prediction */}
+      {prediction && (
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-purple-400">
+            ML Prediction (Next 30 seconds)
+          </h2>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+  <div className="bg-gray-800 rounded-xl p-4 text-center">
+    <div className="text-2xl font-bold text-purple-400">{prediction.predicted_gas}</div>
+    <div className="text-gray-400 text-sm mt-1">Predicted Gas</div>
+  </div>
+  <div className="bg-gray-800 rounded-xl p-4 text-center">
+    <div className="text-2xl font-bold text-cyan-400">{prediction.predicted_quality}</div>
+    <div className="text-gray-400 text-sm mt-1">Predicted Quality</div>
+  </div>
+  <div className="bg-gray-800 rounded-xl p-4 text-center">
+    <div className="text-2xl font-bold text-green-400">{prediction.current_gas}</div>
+    <div className="text-gray-400 text-sm mt-1">Current Gas</div>
+  </div>
+</div>
+<div className="bg-gray-800 rounded-xl p-4">
+  <span className="text-purple-400 text-sm font-semibold">ML Advice: </span>
+  <span className="text-gray-300 text-sm">{prediction.advice}</span>
+</div>
+        </div>
+      )}
+
       {/* AI Recommendations */}
       <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
         <h2 className="text-lg font-semibold mb-4 text-cyan-400">
@@ -181,9 +227,8 @@ export default function App() {
 
       {/* Footer */}
       <div className="text-center text-gray-600 text-sm">
-        Built with ESP32 • Supabase • React • ML Model
+        Built with ESP32 • Supabase • React • FastAPI • ML Model
       </div>
     </div>
   );
 }
-
