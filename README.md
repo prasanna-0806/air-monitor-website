@@ -2,7 +2,7 @@
 
 > A full-stack IoT system that monitors indoor air quality in real time, stores data in the cloud, and uses machine learning to predict future air conditions.
 
-**Live Demo:** [smart-air-monitor.vercel.app](https://smart-air-monitor.vercel.app)  
+**Live Demo:** [smart-air-monitor-system.vercel.app](https://smart-air-monitor-system.vercel.app)  
 **ML API:** [air-monitor-api.onrender.com](https://air-monitor-api.onrender.com)
 
 ---
