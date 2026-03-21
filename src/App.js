@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, AreaChart, Area
 } from "recharts";
-import { Wind, Thermometer, Droplets, Activity, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { Wind, Thermometer, Droplets, Activity } from "lucide-react";
+
 
 const supabase = createClient(
   "https://wfxngnokkbabjuybzyie.supabase.co",
