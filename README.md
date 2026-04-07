@@ -1,8 +1,6 @@
 # 🌿 Smart Air Monitor
 
-Note: The repository now includes an esp32/ folder containing the ESP32 firmware (Arduino sketch, libraries, and helper code). See esp32-main.ino for the firmware entry point and wiring examples — this is the code flashed to the device.
-
-**Live Demo:** [smart-air-monitor-system.vercel.app](https://smart-air-monitor-system.vercel.app)  
+**Live Demo:** [smart-air-monitor-system.vercel.app](https://smart-air-monitor-system.vercel.app)
 **ML API:** [air-monitor-api.onrender.com](https://air-monitor-api.onrender.com)
 
 ---
@@ -42,7 +40,7 @@ React Dashboard          FastAPI (Python)
 (Vercel)                 (Render)
     │                         │
     ├── Live charts            ├── /predict (ML model)
-    ├── Sensor cards           
+    ├── Sensor cards
     └── Recommendations
 ```
 
@@ -107,31 +105,37 @@ React Dashboard          FastAPI (Python)
 
 ---
 
-## 📊 ML Model
-
-The Random Forest Regressor was trained on real sensor data collected from the ESP32:
+## 📁 Project Structure
 
 ```
-Dataset:     339 readings from real IoT sensors
-Features:    Temperature, Humidity, Gas Level
-Target:      Gas level 30 seconds in the future
-Algorithm:   Random Forest Regressor (100 trees)
-Accuracy:    97.5% (R² Score: 0.9746)
-MAE:         10.61 gas units
+smart-air-monitor/
+├── esp32-firmware/
+│   ├── esp32-main.ino        # ESP32 firmware — entry point (C++)
+│   └── firmware-docs.md      # Board settings, build & upload guide
+├── air-monitor-website/
+│   ├── src/
+│   │   └── App.js            # React dashboard
+│   └── package.json
+├── air-monitor-api/
+│   ├── main.py               # FastAPI backend
+│   ├── air_quality_model.pkl # Trained ML model
+│   └── requirements.txt
+├── air-monitor-ml/
+│   ├── air_ml.py             # Model training script
+│   └── sensor_data_rows.csv  # Training data
+└── README.md
 ```
-
-**Feature Importance:**
-- Gas (current): 83.7%
-- Temperature: 13.1%
-- Humidity: 3.1%
 
 ---
 
-## 🚀 Getting Started
+## 💾 Firmware (`esp32-firmware/`)
 
-### Hardware Setup
+The `esp32-firmware/` folder contains the complete Arduino sketch that runs on the ESP32 device.
 
-#### Wiring
+- **`esp32-main.ino`** — Primary sketch: reads DHT22 + MQ135 every 10 seconds, updates the OLED display, and POSTs JSON data to Supabase over WiFi.
+- **`firmware-docs.md`** — Full build guide: board settings, library list, SPIFFS/LittleFS usage, serial monitor setup, and troubleshooting tips.
+
+### Wiring
 
 **DHT22 → ESP32:**
 | DHT22 Pin | ESP32 Pin |
@@ -147,7 +151,7 @@ MAE:         10.61 gas units
 | GND | GND |
 | AO | GPIO34 |
 
-**OLED (SPI) → ESP32:**
+**OLED (SPI, 6-pin) → ESP32:**
 | OLED Pin | ESP32 Pin |
 |----------|-----------|
 | GND | GND |
@@ -157,41 +161,60 @@ MAE:         10.61 gas units
 | RES | GPIO16 |
 | DC | GPIO17 |
 
-#### Arduino Setup
+### Arduino IDE Setup
 
-1. Install Arduino IDE 2
+1. Install **Arduino IDE 2** (latest stable).
 2. Add ESP32 board support via Boards Manager URL:
    ```
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
-3. Install libraries: `DHT sensor library`, `Adafruit SSD1306`, `Adafruit GFX`, `ArduinoJson`
-4. Open `esp32/main.ino`, fill in your WiFi credentials and Supabase URL/key
-5. Upload to ESP32
+3. Select **Board:** `ESP32 Dev Module` — Port: your COM/tty port.
+4. Install required libraries via Library Manager:
+   - `DHT sensor library` (Adafruit)
+   - `Adafruit SSD1306`
+   - `Adafruit GFX Library`
+   - `ArduinoJson`
+5. Open `esp32-firmware/esp32-main.ino`.
+6. Fill in your WiFi credentials and Supabase URL/key at the top of the file.
+7. Click **Upload**. Monitor output in the IDE console.
+
+> ⚠️ Do **not** commit your WiFi password or Supabase API key. Use a `secrets.h` (gitignored) or environment variable approach — details in `firmware-docs.md`.
+
+### Serial Monitor
+
+- Baud rate: **115200**
+- Tools → Serial Monitor (match same baud rate)
+- Prints `Temp | Hum | Gas` readings and Supabase response codes every 10 seconds.
+
+### Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Upload fails | Lower upload speed or hold BOOT button during reset |
+| OLED not found | Check SPI wiring (CLK→18, MOSI→23, DC→17, RES→16) |
+| DHT22 returns NaN | Verify GPIO4 connection and pull-up resistor |
+| Supabase returns non-201 | Check URL, API key, and table schema |
 
 ---
 
-### Backend Setup
+## 🚀 Getting Started
+
+### Backend
 
 ```bash
 cd air-monitor-api
 pip install -r requirements.txt
-
-# Add your Claude API key as environment variable
 export CLAUDE_API_KEY=your_key_here
-
 uvicorn main:app --reload
 ```
 
-API will be live at `http://localhost:8000`
+API live at `http://localhost:8000`
 
 **Endpoints:**
 - `GET /` — Health check
 - `POST /predict` — ML prediction from sensor data
 
-
----
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd air-monitor-website
@@ -199,9 +222,7 @@ npm install
 npm start
 ```
 
-Dashboard will open at `http://localhost:3000`
-
----
+Dashboard at `http://localhost:3000`
 
 ### ML Model Training
 
@@ -213,29 +234,27 @@ pip install pandas scikit-learn matplotlib joblib
 python air_ml.py
 ```
 
-This trains the model, shows evaluation charts, and saves `air_quality_model.pkl`
+Trains the model, shows evaluation charts, and saves `air_quality_model.pkl`.
 
 ---
 
-## 📁 Project Structure
+## 📊 ML Model
+
+Trained on real sensor data collected from the ESP32:
 
 ```
-smart-air-monitor/
-├── esp32/
-│   └── main.ino              # ESP32 firmware (C++)
-├── air-monitor-website/
-│   ├── src/
-│   │   └── App.js            # React dashboard
-│   └── package.json
-├── air-monitor-api/
-│   ├── main.py               # FastAPI backend
-│   ├── air_quality_model.pkl # Trained ML model
-│   └── requirements.txt
-├── air-monitor-ml/
-│   ├── air_ml.py             # Model training script
-│   └── sensor_data_rows.csv  # Training data
-└── README.md
+Dataset:     339 readings from real IoT sensors
+Features:    Temperature, Humidity, Gas Level
+Target:      Gas level 30 seconds in the future
+Algorithm:   Random Forest Regressor (100 trees)
+Accuracy:    97.5% (R² Score: 0.9746)
+MAE:         10.61 gas units
 ```
+
+**Feature Importance:**
+- Gas (current): 83.7%
+- Temperature: 13.1%
+- Humidity: 3.1%
 
 ---
 
@@ -258,7 +277,6 @@ smart-air-monitor/
 | > 2000 | 🔴 Bad | Open windows immediately |
 
 ---
-
 
 ## 👨‍💻 Author
 
